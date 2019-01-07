@@ -1,0 +1,27 @@
+---
+
+galaxy_info:
+  role_name: "docker-swarm-compose"
+  author: "Jinal Shah"
+  description: "Install and configure Docker, Swarm and Compose"
+  license: "MIT"
+  min_ansible_version: 2.7
+
+  platforms:
+    - name: "Ubuntu"
+      versions:
+        - "xenial"
+        - "bionic"
+    - name: "Debian"
+      versions:
+        - "stretch"
+
+  galaxy_tags:
+    - "containers"
+    - "compose"
+    - "dev_tools"
+    - "docker"
+    - "packaging"
+    - "swarm"
+
+dependencies: []

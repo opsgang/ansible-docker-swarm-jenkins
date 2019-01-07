@@ -1,0 +1,70 @@
+---
+- name: Update APT Cache
+  apt:
+    cache_valid_time: "{{ '86400' if jenkins_release_update else '' }}"
+  become: true
+
+- name: Install OS Dependencies
+  apt:
+    name: ['apt-transport-https', 'openjdk-8-jdk-headless', 'openjdk-8-jdk']
+    state: present
+  async: 60
+  poll: 5
+  retries: 3
+  delay: 3
+  become: true
+
+- name: Determine APT Key and Repo to Use (Step 1)
+  set_fact:
+    jenkins_apt_repo_flavor: "{{ 'debian' if jenkins_release_line == 'weekly' else 'debian-stable' }}"
+
+- name: Determine APT Key and Repo to Use (Step 2)
+  set_fact:
+    jenkins_apt_key_url: "{{ '%s/%s/jenkins.io.key' % (jenkins_packages_url_base, jenkins_apt_repo_flavor) }}"
+    jenkins_apt_repo: "{{ 'deb %s/%s binary/' % (jenkins_packages_url_base, jenkins_apt_repo_flavor) }}"
+
+- name: Add Jenkins APT Key
+  apt_key:
+    url: "{{ jenkins_apt_key_url }}"
+    state: present
+  become: true
+
+- name: Remove Unused Jenkins APT Repositories
+  apt_repository:
+    repo: "{{ item }}"
+    state: absent
+    update_cache: true
+  become: true
+  with_items:
+    - 'deb http://pkg.jenkins-ci.org/debian binary/'
+    - 'deb https://pkg.jenkins.io/debian binary/'
+    - 'deb https://pkg.jenkins.io/debian-stable binary/'
+  when: "item != jenkins_apt_repo"
+
+- name: Add Jenkins APT Repository
+  apt_repository:
+    repo: "{{ jenkins_apt_repo }}"
+    state: present
+    update_cache: yes
+  become: true
+
+# The setup wizard has to be disabled before Jenkins is installed, because the
+# APT packages launch it immediately after install.
+- name: Configure Jenkins Launch Settings
+  template:
+    src: etc_default_jenkins_Debian.j2
+    dest: /etc/default/jenkins
+    owner: root
+    group: root
+    mode: u=rw,g=,o=r
+  become: true
+  notify:
+    - "Restart Service 'jenkins'"
+
+- name: Jenkins Install
+  apt:
+    name: jenkins
+    # Setting this to 'latest' is perhaps debatable, but it seems silly not to
+    # since this plugin also updates all of the Jenkins plugins automatically.
+    state: "{{ 'latest' if jenkins_release_update else 'present' }}"
+  become: true

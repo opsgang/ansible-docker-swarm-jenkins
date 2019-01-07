@@ -1,0 +1,85 @@
+---
+# vim: et sr sw=2 ts=2 smartindent:
+
+- hosts: all
+  remote_user: root
+  become: yes
+  become_method: sudo
+  roles:
+    - role: "common"
+
+- hosts: swarm-manager-primary
+  remote_user: root
+  become: yes
+  become_method: sudo
+  roles:
+    - role: "jenkins2"
+
+- hosts: swarm-manager-primary
+  remote_user: root
+  become: yes
+  become_method: sudo
+  tasks:
+  - name: "get docker info"
+    shell: docker info
+    register: docker_info
+    changed_when: False
+
+  - name: "create primary swarm manager"
+    shell: docker swarm init --advertise-addr {{ ansible_default_ipv4['address'] }}
+    when: "docker_info.stdout.find('Swarm: inactive') != -1"
+
+  - name: "get docker swarm manager token"
+    shell: docker swarm join-token -q manager
+    register: manager_token
+
+  - name: "get docker swarm worker token"
+    shell: docker swarm join-token -q worker
+    register: worker_token
+
+- hosts: swarm-manager-secondary
+  remote_user: root
+  become: yes
+  become_method: sudo
+  tasks:
+  - name: "get docker info"
+    shell: docker info
+    register: docker_info
+    changed_when: False
+
+  - name: "join as a manager"
+    shell: "docker swarm join --token {{ hostvars['manager1']['manager_token']['stdout'] }} {{ hostvars['manager1']['ansible_eth0']['ipv4']['address'] }}:2377"
+    when: docker_info.stdout.find("Swarm{{':'}} inactive") != -1
+    retries: 3
+    delay: 20
+
+- hosts: swarm-worker
+  remote_user: root
+  become: yes
+  become_method: sudo
+  tasks:
+  - name: "join as a worker"
+    shell: "docker swarm join --token {{ hostvars['manager1']['worker_token']['stdout'] }} {{ hostvars['manager1']['ansible_eth0']['ipv4']['address'] }}:2377"
+    when: "docker_info.stdout.find('Swarm: inactive') != -1"
+    retries: 3
+    delay: 20
+
+- hosts: swarm-manager-primary
+  remote_user: root
+  become: yes
+  become_method: sudo
+  tasks:
+  - name: List networks
+    shell: docker network ls
+    register: docker_networks
+
+  - name: Create network when not there
+    shell: docker network create --driver overlay --subnet {{ item.subnet }} --gateway {{ item.gateway }} {{ item.name }}
+    with_items:
+        -  {
+              name: 'apps',
+              subnet: '17.0.0.0/16',
+              gateway: '17.0.0.1'
+            }
+
+    when: docker_networks.stdout.find( item.name ) == -1
