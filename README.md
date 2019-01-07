@@ -75,6 +75,7 @@ ansible-playbook \
     --key-file /path/to/ssh/key                      `# change to your key` \
     -e "ansible_user=ubuntu"                         `# change to your remote user` \
     -e "ansible_python_interpreter=/usr/bin/python3" `# change to your desired python` \
+    -e "jenkins_url_external=http://foo.com"         `# change to your PUBLIC ip or dns` \
     -e "jenkins_admin_username=admin"                `# if jenkins security enabled, provide user` \
     -e "jenkins_admin_password=secret"               `# if jenkins security enabled, provide pass` \
         site.yml

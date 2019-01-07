@@ -31,7 +31,7 @@ jenkins_context_path: ''
 # Jenkins config and used in emails, webhooks, etc.
 # If this is left empty/None, the configuration will not be set and Jenkins
 # will try to auto-discover this (which won't work correctly if it's proxied).
-jenkins_url_external: 'http://ec2-54-154-217-50.eu-west-1.compute.amazonaws.com:8080'
+jenkins_url_external: ''
 
 # The number of minutes before Jenkins sessions timeout, i.e. how long logins
 # are valid for. Defaults to 30 minutes. Can be set to `0` to never timeout.
@@ -70,7 +70,7 @@ jenkins_plugins_recommended:
 jenkins_plugins_extra: []
 
 # Timeout when installing/updating plugins (in seconds).
-jenkins_plugins_timeout: 60
+jenkins_plugins_timeout: 90
 
 # How many times to retry failed plugin installs/upgrades.
 jenkins_plugins_retries: 3
