@@ -191,3 +191,31 @@
 - name: Verify Jenkins Web UI Content
   action: fail
   when: "'Jenkins' not in jenkins_ui.content"
+
+- name: Remove Jenkins related cron jobs
+  file:
+    path: "/etc/cron.d/{{ item.cron_file }}"
+    state: "absent"
+  loop: "{{ jenkins_cron_jobs }}"
+  when:
+    - item.state | d("present") == "absent"
+    - item.name | d() and item.job | d()
+    - item.schedule | d() and item.cron_file | d()
+
+- name: Create Jenkins related cron jobs
+  cron:
+    name: "{{ item.name }}"
+    job: "{{ item.job }}"
+    minute: "{{ item.schedule[0] }}"
+    hour: "{{ item.schedule[1] }}"
+    day: "{{ item.schedule[2] }}"
+    month: "{{ item.schedule[3] }}"
+    weekday: "{{ item.schedule[4] }}"
+    cron_file: "{{ item.cron_file }}"
+    user: "{{ item.user | d('root') }}"
+  loop: "{{ jenkins_cron_jobs }}"
+  when:
+    - item.state | d("present") != "absent"
+    - item.name | d() and item.job | d()
+    - item.schedule | d() and item.cron_file | d()
+

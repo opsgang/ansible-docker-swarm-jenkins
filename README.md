@@ -57,12 +57,11 @@ manager2
 
 Now run ansible playbook ...
 
-*Note the -e options for jenkins are only required if you've enabled jenkins security already.*
+*Note the -e options for jenkins_admin are only required if you've enabled jenkins security.*
 
-This means you must have created a user that can access the jenkins with just username / password.
-
-If you are allowing anonymous access or running for the first time, *omit* the 2 -e options
-in the example below.
+If you are allowing anonymous access or running for the first time, *omit* those -e options
+in the example below. However if you've enabled security and created a user / password,
+make sure you pass those -e args.
 
 ```bash
 #
@@ -104,6 +103,8 @@ Default: single host, acting as primary manager.
 * pip `docker` package - default: latest
     * to support installation of ansible `docker_*` modules
 
+* jenkins 2.x LTS with vendor-recommended list of plugins.
+
 ### system cfg
 
 * adds list of users to docker group, to avoid need for root access
@@ -114,6 +115,9 @@ Default: single host, acting as primary manager.
 
 * scheduled docker system cleanup.
     * default: runs every Sunday at midnight.
+
+* scheduled jenkins workspace cleanup.
+    * default: runs nightly.
 
 * runs docker registry login credentials
 
